@@ -1,119 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Socket.IO chat</title>
-    <style>
-        body {
-            margin: 0;
-            padding-bottom: 3rem;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        #form {
-            background: rgba(0, 0, 0, 0.15);
-            padding: 0.25rem;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            height: 3rem;
-            box-sizing: border-box;
-            backdrop-filter: blur(10px);
-        }
-
-        #input {
-            border: none;
-            padding: 0 1rem;
-            flex-grow: 1;
-            border-radius: 2rem;
-            margin: 0.25rem;
-        }
-
-        #input:focus {
-            outline: none;
-        }
-
-        #form>button {
-            background: #333;
-            border: none;
-            padding: 0 1rem;
-            margin: 0.25rem;
-            border-radius: 3px;
-            outline: none;
-            color: #fff;
-        }
-
-        #messages {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        #messages>li {
-            padding: 0.5rem 1rem;
-        }
-
-        #messages>li:nth-child(odd) {
-            background: #efefef;
-        }
-    </style>
+	<!-- Mata Tags -->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<title>Title</title>
+	<link rel="stylesheet" href="./assets/css/bootstrap.min.css">
+	<script src="./assets/js/jquery.min.js"></script>
+	<script src="./assets/js/bootstrap.bundle.min.js"></script>
+	<link rel="stylesheet" href="./assets/css/custom.css">
 </head>
 
 <body>
-    <ul id="messages"></ul>
-    <form id="form" action="">
-            <input type="text" id="sendername" placeholder="sender name" value="" onchange="setMyUser(this.value)">
-            <input type="text" id="senderSocketId" value="" disabled />->
-            <input type="text" id="receiverSocketId" value="" placeholder="reciverSocketId"/>
-            <input id="input" autocomplete="off" /><button>Send</button>
-    </form>
+
+	<div class="container-fluid bg-dark text-white page-wrapper">
+		<div class="container py-5 h-100">
+			<div class="main-wrapper d-flex flex-column h-100 justify-content-between">
+				<div class="chat-wrapper mb-4">
+					<div class="row">
+						<div class="col-3 chat-sidebar-container">
+							<ul class="list-group">
+							</ul>
+						</div>
+						<div class="col-9 chat-message-container">
+							<ul class="list-group">
+								<li class="text-center text-muted no-message-yet">No Messages
+									Yet...</li>
+								<li class="chat-left">Hii! Dharam</li>
+								<li class="chat-right">Hello Bhavna</li>
+								<li class="chat-left">How are you?</li>
+								<li class="chat-right">I'm Good, Tell me about you.</li>
+								<li class="chat-left">Very good</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="chat-input-area-container">
+					<form name="messageForm" id="messageForm" class="row">
+						<div class="col-3">
+							Options
+						</div>
+						<div class="col-9">
+							<div class="chat-input-group">
+								<div class="input-group">
+									<input type="text" name="messageInput" id="messageInput" class="form-control"
+										placeholder="type message here">
+									<button type="submit" class="btn btn-success">⚡</button>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" tabindex="-1" id="userModal">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<form name="userDetailsFrm" id="userDetailsFrm">
+					<div class="modal-header text-center">
+						<h5 class="modal-title w-100">Welcome To FlashChat⚡io</h5>
+					</div>
+					<div class="modal-body">
+						<input type="text" name="userName" id="userName" class="form-control" placeholder="Enter Your FakeName"
+							autocomplete="name">
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-success text-white">FlashStart⚡</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		var socketId;
+		var userName;
+		var activeReceiver;
+		var newConverstion = false;
+		var userListEleContainer = $('.chat-sidebar-container .list-group');
+		var activeChatContainer = $('.chat-message-container .list-group');
+		const socket = io();
+
+		$(document).ready(function () {
+			$('#userModal').modal('show');
+		});
+
+		userListEleContainer.on('click', userListEleContainer.children(), function (e) {
+			userListEleContainer.children().removeClass('active chat');
+			$(e.target).addClass('active chat');
+			activeChatContainer.html('<li class="text-center">No Messages Yet...</li>');
+			activeReceiver = $(e.target).attr('socketId');
+			newConverstion = true;
+		});
+
+		socket.on('connect', () => {
+			socketId = socket.id;
+			console.log('SocketId is: ' + socketId);
+		});
+
+		$('#userDetailsFrm').on('submit', function (e) {
+			e.preventDefault();
+			makeUserOnline($('#userName').val());
+		});
+
+		$('#messageForm').on('submit', function (e) {
+			e.preventDefault();
+			var data = {};
+			$(this).serializeArray().map(e => data[e.name] = e.value);
+			sendMessage(data);
+			if (newConverstion) {
+				activeChatContainer.html('<li class="chat-right">' + data.messageInput + '</li>');
+			} else {
+				activeChatContainer.append('<li class="chat-right">' + data.messageInput + '</li>');
+			}
+			$(this).find('input[name="messageInput"]').val('');
+		});
+
+		function makeUserOnline(userName) {
+			socket.emit('setUser', { userName });
+			$('#userModal').modal('hide');
+		}
+
+		function sendMessage(data) {
+			data['receiverSocketId'] = activeReceiver;
+			socket.emit('sendMessage', data);
+		}
+
+		socket.on('updateOnlineUserList', (response) => {
+			console.log(response);
+			userListEleContainer.append('<li class="list-group-item" socketId="'+response.newUser.socketId + '">' + response.newUser.userName + '</li>');
+			if (userListEleContainer.children().length == 1) {
+				var target = userListEleContainer.children()[0];
+				userListEleContainer.children().removeClass('active chat');
+				$(target).addClass('active chat');
+				activeChatContainer.html('<li class="text-center text-muted">No Messages Yet...</li>');
+				activeReceiver = $(target).attr('socketId');
+				newConverstion = true;
+			}
+
+		});
+
+		socket.on('newMessage', (response) => {
+			console.log(response);
+			if (newConverstion) {
+				activeChatContainer.html('<li class="chat-left">' + response.message + '</li>');
+				newConverstion = false;
+			} else {
+				activeChatContainer.append('<li class="chat-left">' + response.message + '</li>');
+			}
+		});
+	</script>
+
 </body>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    var socketId;
-    const socket = io();
-
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
-    const senderSocketIdInput = document.getElementById('senderSocketId');
-    const receiverSocketIdInput = document.getElementById('receiverSocketId');
-    var sendername = document.getElementById('sendername');
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if(receiverSocketIdInput.value!=""){
-            socket.emit('private message', { recipientSocketId: receiverSocketIdInput.value, message: input.value });
-            addtoChat('you', input.value);
-            input.value = "";
-        }
-    });
-
-    // Set user information on connection
-    function setMyUser(username) {
-        socket.emit('setUser', { username });
-    }
-
-    socket.on('connect', ()=>{
-        socketId = socket.id;
-        senderSocketIdInput.value = socketId;
-        console.log('SocketId is: '+socketId);
-    })
-
-    socket.on('chat message', (data) => {
-        addtoChat(data.sender, data.message);
-    });
-
-    function addtoChat(sender, message) {
-        const item = document.createElement('li');
-        item.textContent = sender+' : '+message;
-        messages.appendChild(item);
-        window.scrollTo(0, document.body.scrollHeight);
-    }
-</script>
 
 </html>

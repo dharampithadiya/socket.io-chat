@@ -1,0 +1,39 @@
+.page-wrapper{
+    min-height: 100vh;
+}
+.chat-message-container ul.list-group{
+    height: 500px;
+    max-height: 500px;
+    overflow: auto;
+    list-style: none;
+}
+.chat-message-container ul.list-group::-webkit-scrollbar{
+    width: 5px;
+}
+.chat-message-container ul.list-group::-webkit-scrollbar-thumb{
+    background-color: var(--bs-green);
+}
+.chat-message-container ul.list-group::-webkit-scrollbar-track{
+    background-color: var(--bs-white);
+}
+.chat-message-container ul.list-group li{
+    width: fit-content;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin: 2px 0px;
+}
+.chat-message-container ul.list-group li.chat-left{
+    background-color: var(--bs-green);
+    color: var(--bs-white);
+    margin-right: auto;
+}
+.chat-message-container ul.list-group li.chat-right{
+    background-color: var(--bs-gray-dark);
+    color: var(--bs-white);
+    margin-left: auto;
+}
+.chat-sidebar-container .active.chat{
+    background-color: var(--bs-green);
+    color: var(--bs-white);
+    border: none;
+}

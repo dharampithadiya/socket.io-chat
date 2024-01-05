@@ -11,6 +11,8 @@ var connectedUsers = [];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+app.use(express.static('public'))
+
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
 });
@@ -26,17 +28,19 @@ io.on('connection', (socket) => {
   });
 
   socket.on('setUser', (user) => {
-    console.log(user);
-    connectedUsers[socket.id] = { username: user.username, socketId: socket.id };
+    connectedUsers[socket.id] = { userName: user.userName, socketId: socket.id };
+    console.log({'newUser': connectedUsers[socket.id]});
+    io.except(socket.id).emit('updateOnlineUserList', {'newUser': connectedUsers[socket.id]});
   });
 
-  socket.on('private message', ({ recipientSocketId, message }) => {
-    console.log('here')
-    io.to(recipientSocketId).emit('chat message', {
-      sender: connectedUsers[socket.id].username,
-      message: message,
+  socket.on('sendMessage', (data)=>{
+    // console.log(connectedUsers[data.receiverSocketId])
+    io.to(data.receiverSocketId).emit('newMessage',{
+      senderId : data.receiverSocketId,
+      message: data.messageInput,
+      senderName: connectedUsers[data.receiverSocketId].userName
     });
-  });
+  })
   
 
   socket.on('chat message', (msg) => {
